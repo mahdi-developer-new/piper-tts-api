@@ -1,0 +1,41 @@
+name: Generate Piper Voice
+
+on:
+  workflow_dispatch:
+    inputs:
+      text:
+        description: "Text to convert into voice"
+        required: true
+        type: string
+
+jobs:
+  generate-voice:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Piper
+        run: pip install piper-tts
+
+      - name: Download voice
+        run: python -m piper.download_voices en_US-lessac-medium
+
+      - name: Generate voice
+        run: |
+          python -m piper \
+            -m en_US-lessac-medium \
+            -f voice.wav \
+            -- "${{ inputs.text }}"
+
+      - name: Upload audio
+        uses: actions/upload-artifact@v4
+        with:
+          name: voice-audio
+          path: voice.wav
