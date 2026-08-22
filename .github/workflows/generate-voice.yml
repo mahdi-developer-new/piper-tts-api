@@ -27,12 +27,20 @@ jobs:
       - name: Download voice
         run: python -m piper.download_voices en_US-lessac-medium
 
-      - name: Generate voice
+      - name: Check received text
         run: |
+          echo "TEXT RECEIVED:"
+          echo "${{ inputs.text }}"
+
+      - name: Generate voice
+        env:
+          VOICE_TEXT: ${{ inputs.text }}
+        run: |
+          python -c "import os; print('Text length:', len(os.environ.get('VOICE_TEXT', '')))"
           python -m piper \
             -m en_US-lessac-medium \
             -f voice.wav \
-            -- "${{ inputs.text }}"
+            -- "$VOICE_TEXT"
 
       - name: Upload audio
         uses: actions/upload-artifact@v4
