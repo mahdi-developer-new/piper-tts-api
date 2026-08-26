@@ -22,28 +22,35 @@ jobs:
           python-version: "3.12"
 
       - name: Install Piper
-        run: pip install piper-tts
+        run: |
+          pip install --upgrade pip
+          pip install piper-tts
 
       - name: Download voice
-        run: python -m piper.download_voices en_US-lessac-medium
-
-      - name: Check received text
         run: |
-          echo "TEXT RECEIVED:"
-          echo "${{ inputs.text }}"
+          python -m piper.download_voices en_US-lessac-medium
 
       - name: Generate voice
         env:
           VOICE_TEXT: ${{ inputs.text }}
         run: |
-          python -c "import os; print('Text length:', len(os.environ.get('VOICE_TEXT', '')))"
-          python -m piper \
+          if [ -z "$VOICE_TEXT" ]; then
+            echo "ERROR: No text received"
+            exit 1
+          fi
+
+          echo "Received text length: ${#VOICE_TEXT}"
+
+          printf '%s' "$VOICE_TEXT" | python -m piper \
             -m en_US-lessac-medium \
-            -f voice.wav \
-            -- "$VOICE_TEXT"
+            -f voice.wav
+
+          test -s voice.wav
+          echo "Voice generated successfully"
 
       - name: Upload audio
         uses: actions/upload-artifact@v4
         with:
           name: voice-audio
           path: voice.wav
+          if-no-files-found: error
